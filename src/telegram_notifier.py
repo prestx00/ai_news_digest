@@ -1,4 +1,6 @@
 import telegram
+import random
+import asyncio
 from . import config
 
 async def send_notification(summary: str, article_url: str):
@@ -8,7 +10,7 @@ async def send_notification(summary: str, article_url: str):
         return
 
     bot = telegram.Bot(token=config.BOT_TOKEN)
-    message_text = f"**Еженедельный AI-дайджест готов!**\n\n{summary}\n\n[Читать полный разбор]({article_url})"
+    message_text = f"**Мяу! Еженедельный AI-дайджест готов!**\n\n{summary}\n\n[Читать полный разбор]({article_url})"
 
     try:
         await bot.send_message(
@@ -17,5 +19,7 @@ async def send_notification(summary: str, article_url: str):
             parse_mode='Markdown'
         )
         print(f"Уведомление успешно отправлено в чат {config.CHAT_ID}")
+        # Задержка после отправки уведомления
+        await asyncio.sleep(random.uniform(1, 3))
     except Exception as e:
         print(f"Ошибка при отправке уведомления: {e}")

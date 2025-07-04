@@ -52,3 +52,12 @@ def mark_posts_as_processed(post_ids: list):
     cursor.executemany("UPDATE posts SET is_processed = 1 WHERE id = ?", [(pid,) for pid in post_ids])
     conn.commit()
     conn.close()
+
+# def reset_processed_posts():
+#     """Сбрасывает флаг is_processed для всех постов на 0 (необработанные)."""
+#     conn = sqlite3.connect(config.DB_NAME)
+#     cursor = conn.cursor()
+#     cursor.execute("UPDATE posts SET is_processed = 0")
+#     conn.commit()
+#     conn.close()
+#     print("Все посты помечены как необработанные (is_processed = 0).")

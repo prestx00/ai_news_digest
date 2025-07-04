@@ -25,7 +25,7 @@ async def weekly_digest_job():
 
     # 3. Генерация статьи и саммари
     print("Генерация статьи с помощью OpenAI...")
-    article_html, summary = article_generator.generate_article_and_summary(posts)
+    article_html, summary = await article_generator.generate_article_and_summary(posts)
 
     if not article_html or not summary:
         print("Не удалось сгенерировать статью. Задача прервана.")
@@ -39,7 +39,7 @@ async def weekly_digest_job():
 
     # 4. Публикация в Telegra.ph
     print("Публикация статьи в Telegra.ph...")
-    article_url = telegraph_publisher.publish_to_telegraph(title, article_html)
+    article_url = await telegraph_publisher.publish_to_telegraph(title, article_html)
 
     if not article_url:
         print("Не удалось опубликовать статью. Задача прервана.")
@@ -52,22 +52,26 @@ async def weekly_digest_job():
     database.mark_posts_as_processed(post_ids)
     print("Дайджест успешно создан и отправлен!")
 
-if __name__ == "__main__":
+async def main_async():
     # Инициализация базы данных при первом запуске
     database.init_db()
-
+    # database.reset_processed_posts()
     # Настройка планировщика
     scheduler = AsyncIOScheduler()
     # Запуск задачи каждую неделю, в пятницу в 20:40
-    scheduler.add_job(weekly_digest_job, 'cron', day_of_week='fri', hour=20, minute=40)
+    scheduler.add_job(weekly_digest_job, 'cron', day_of_week='fri', hour=22, minute=36)
 
-    print("Планировщик запущен. Следующий запуск в пятницу в 20:40.")
+    print("Планировщик запущен. Следующий запуск в пятницу в 22:36.")
     print("Нажмите Ctrl+C для выхода.")
 
     scheduler.start()
 
-    # Поддерживаем работу скрипта
+    # Поддерживаем работу скрипта, чтобы цикл событий не завершался
     try:
-        asyncio.get_event_loop().run_forever()
+        # Создаем Future, который никогда не будет завершен, чтобы держать loop активным
+        await asyncio.Future()
     except (KeyboardInterrupt, SystemExit):
         pass
+
+if __name__ == "__main__":
+    asyncio.run(main_async())
