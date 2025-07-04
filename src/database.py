@@ -13,6 +13,7 @@ def init_db():
             text TEXT NOT NULL,
             date INTEGER NOT NULL,
             source_link TEXT,
+            has_media BOOLEAN DEFAULT 0,
             is_processed BOOLEAN DEFAULT 0,
             UNIQUE(channel, message_id)
         )
@@ -20,13 +21,13 @@ def init_db():
     conn.commit()
     conn.close()
 
-def add_post(channel: str, message_id: int, text: str, date: int, source_link: str):
+def add_post(channel: str, message_id: int, text: str, date: int, source_link: str, has_media: bool = False):
     """Добавляет новый пост в базу данных, избегая дубликатов."""
     conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO posts (channel, message_id, text, date, source_link) VALUES (?, ?, ?, ?, ?)",
-                       (channel, message_id, text, date, source_link))
+        cursor.execute("INSERT INTO posts (channel, message_id, text, date, source_link, has_media) VALUES (?, ?, ?, ?, ?, ?)",
+                       (channel, message_id, text, date, source_link, has_media))
         conn.commit()
     except sqlite3.IntegrityError:
         # Пост уже существует
@@ -35,11 +36,11 @@ def add_post(channel: str, message_id: int, text: str, date: int, source_link: s
         conn.close()
 
 def get_unprocessed_posts():
-    """Возвращает все необработанные посты (текст и ссылку) из базы данных."""
+    """Возвращает все необработанные посты (id, текст, ссылку, наличие медиа) из базы данных."""
     conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
-    # Выбираем id, текст и ссылку на источник
-    cursor.execute("SELECT id, text, source_link FROM posts WHERE is_processed = 0")
+    # Выбираем id, текст, ссылку на источник и наличие медиа
+    cursor.execute("SELECT id, text, source_link, has_media FROM posts WHERE is_processed = 0")
     posts = cursor.fetchall()
     conn.close()
     return posts

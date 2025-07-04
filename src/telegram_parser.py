@@ -18,13 +18,18 @@ async def parse_channels():
                     async for message in client.iter_messages(entity, limit=100):
                         # Формируем прямую ссылку на пост
                         source_link = f"https://t.me/{entity.username}/{message.id}"
-                        if message.text:
+                        # Проверяем наличие медиа (фото, видео, документ)
+                        has_media = bool(message.photo or message.video or message.document)
+
+                        # Сохраняем пост, даже если нет текста, но есть медиа
+                        if message.text or has_media:
                             database.add_post(
                                 channel=channel_name,
                                 message_id=message.id,
-                                text=message.text,
+                                text=message.text if message.text else "", # Сохраняем пустую строку, если текста нет
                                 date=int(message.date.timestamp()),
-                                source_link=source_link
+                                source_link=source_link,
+                                has_media=has_media
                             )
             except Exception as e:
                 print(f"Ошибка при парсинге канала {channel_name}: {e}")

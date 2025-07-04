@@ -58,10 +58,10 @@ if __name__ == "__main__":
 
     # Настройка планировщика
     scheduler = AsyncIOScheduler()
-    # Запуск задачи каждую неделю, в воскресенье в 12:00
-    scheduler.add_job(weekly_digest_job, 'cron', day_of_week='sun', hour=12)
+    # Запуск задачи каждую неделю, в пятницу в 20:40
+    scheduler.add_job(weekly_digest_job, 'cron', day_of_week='fri', hour=20, minute=40)
 
-    print("Планировщик запущен. Следующий запуск в воскресенье в 12:00.")
+    print("Планировщик запущен. Следующий запуск в пятницу в 20:40.")
     print("Нажмите Ctrl+C для выхода.")
 
     scheduler.start()

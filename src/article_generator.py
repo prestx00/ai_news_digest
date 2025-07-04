@@ -14,7 +14,8 @@ def generate_article_and_summary(posts: list) -> tuple[str, str]:
     for post in posts:
         text = post[1]
         source_link = post[2]
-        formatted_posts += f"<post>\n<content>{text}</content>\n<source>{source_link}</source>\n</post>\n\n"
+        has_media = "true" if post[3] else "false" # Получаем флаг has_media
+        formatted_posts += f"<post>\n<content>{text}</content>\n<source>{source_link}</source>\n<has_media>{has_media}</has_media>\n</post>\n\n"
 
     system_prompt = """
     Ты — экспертный AI-аналитик и редактор новостного IT-издания. Твоя задача — проанализировать подборку новостей в <post> тегах и превратить их в качественный, структурированный лонг-рид в формате HTML. Аудитория — IT-специалисты, менеджеры и энтузиасты.
@@ -24,7 +25,8 @@ def generate_article_and_summary(posts: list) -> tuple[str, str]:
     2.  **Структура:** Сгруппируй новости по 3-5 ключевым темам. Каждая тема — это раздел, начинающийся с подзаголовка в теге <h2>.
     3.  **Содержание:** Внутри каждого раздела связно изложи новости в тегах <p>. Не просто копируй, а пересказывай и анализируй.
     4.  **Источники:** В конце каждого смыслового абзаца или утверждения, основанного на посте, ставь ссылку на источник. Ссылка должна выглядеть как маленький кликабельный значок или цифра, например: <a href="[source_link]">[1]</a>. Используй ссылки из тега <source>.
-    5.  **Форматирование:** Используй <b> для выделения ключевых терминов и <i> для комментариев.
+    5.  **Медиа:** Если у поста есть медиа (тег <has_media>true</has_media>), упомяни об этом в тексте, например: "(см. изображение в оригинальном посте)" или "(подробности на видео)". Не пытайся описать само изображение, просто укажи на его наличие.
+    6.  **Форматирование:** Используй <b> для выделения ключевых терминов и <i> для комментариев.
 
     Требования к краткому содержанию (summary):
     *   Это текст для анонса в Telegram. Он должен быть коротким (3-4 предложения).
@@ -36,7 +38,7 @@ def generate_article_and_summary(posts: list) -> tuple[str, str]:
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4o",
+            model="gpt-4.1-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
