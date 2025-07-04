@@ -16,3 +16,6 @@ __pycache__/
 # IDE configuration files
 .idea/
 .vscode/
+
+#Documentation
+documentation.md
