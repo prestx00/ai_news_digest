@@ -1,0 +1,6 @@
+python-telegram-bot
+telethon
+openai
+telegraph
+apscheduler
+python-dotenv

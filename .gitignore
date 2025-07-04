@@ -1,0 +1,18 @@
+# Virtual Environment
+venv/
+
+# Python cache
+__pycache__/
+
+# Environment variables
+.env
+
+# Database file
+*.db
+
+# Session file for Telethon
+*.session
+
+# IDE configuration files
+.idea/
+.vscode/
