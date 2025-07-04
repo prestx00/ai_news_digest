@@ -15,7 +15,7 @@ async def parse_channels():
                 entity = await client.get_entity(channel_name)
                 if isinstance(entity, Channel):
                     print(f"Парсинг канала: {entity.title}")
-                    async for message in client.iter_messages(entity, limit=100):
+                    async for message in client.iter_messages(entity, limit=50):
                         # Формируем прямую ссылку на пост
                         source_link = f"https://t.me/{entity.username}/{message.id}"
                         # Проверяем наличие медиа (фото, видео, документ)
