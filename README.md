@@ -51,6 +51,9 @@ pip install -r requirements.txt
     *   `TELEGRAM_CHANNELS`: Список каналов для парсинга, через запятую (например, `channel1,channel2`).
     *   `DB_NAME`: Имя файла для базы данных SQLite (например, `ai_news.db`). **Должно быть уникальным для каждого бота.**
     *   `ARTICLE_PROMPT`: Системный промпт для OpenAI, определяющий стиль и структуру генерируемой статьи.
+    *   `SCHEDULE_DAY_OF_WEEK`: День недели для запуска (например, `mon`, `tue`, `wed`, `thu`, `fri`, `sat`, `sun`).
+    *   `SCHEDULE_HOUR`: Час запуска (0-23).
+    *   `SCHEDULE_MINUTE`: Минута запуска (0-59).
 
 ### 5. Первый запуск (для авторизации Telethon)
 

@@ -64,9 +64,15 @@ async def main_async(config_file: str):
     # Настройка планировщика
     scheduler = AsyncIOScheduler()
     # Запуск задачи каждую неделю, в пятницу в 20:40
-    scheduler.add_job(weekly_digest_job, 'cron', day_of_week='fri', hour=22, minute=36)
+    scheduler.add_job(
+        weekly_digest_job, 
+        'cron', 
+        day_of_week=config.SCHEDULE_DAY_OF_WEEK, 
+        hour=config.SCHEDULE_HOUR, 
+        minute=config.SCHEDULE_MINUTE
+    )
 
-    print(f"Планировщик для {config_file} запущен. Следующий запуск в пятницу в 22:36.")
+    print(f"Планировщик для {config_file} запущен. Следующий запуск в {config.SCHEDULE_DAY_OF_WEEK} в {config.SCHEDULE_HOUR:02d}:{config.SCHEDULE_MINUTE:02d}.")
     print("Нажмите Ctrl+C для выхода.")
 
     scheduler.start()

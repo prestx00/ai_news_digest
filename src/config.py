@@ -9,7 +9,10 @@ CHAT_ID = None
 OPENAI_API_KEY = None
 TELEGRAM_CHANNELS = []
 ARTICLE_PROMPT = ""
-DB_NAME = None # Теперь имя БД будет загружаться из конфига
+DB_NAME = None
+SCHEDULE_DAY_OF_WEEK = None
+SCHEDULE_HOUR = None
+SCHEDULE_MINUTE = None
 
 def load_config(config_path: str):
     """Загружает конфигурацию из указанного .env файла."""
@@ -19,7 +22,7 @@ def load_config(config_path: str):
     load_dotenv(dotenv_path=config_path)
 
     # Используем global, чтобы изменить переменные на уровне модуля
-    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, DB_NAME
+    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE
 
     # Telegram User API
     API_ID = int(os.getenv("API_ID"))
@@ -39,7 +42,12 @@ def load_config(config_path: str):
     ARTICLE_PROMPT = os.getenv("ARTICLE_PROMPT")
 
     # Имя файла базы данных
-    DB_NAME = os.getenv("DB_NAME", "news.db") # По умолчанию news.db, если не указано
+    DB_NAME = os.getenv("DB_NAME", "news.db")
+
+    # Настройки расписания
+    SCHEDULE_DAY_OF_WEEK = os.getenv("SCHEDULE_DAY_OF_WEEK", "mon") # По умолчанию понедельник
+    SCHEDULE_HOUR = int(os.getenv("SCHEDULE_HOUR", 9)) # По умолчанию 9 утра
+    SCHEDULE_MINUTE = int(os.getenv("SCHEDULE_MINUTE", 0)) # По умолчанию 0 минут
 
     # Проверка наличия обязательных переменных
     required_vars = ["API_ID", "API_HASH", "BOT_TOKEN", "CHAT_ID", "OPENAI_API_KEY", "TELEGRAM_CHANNELS", "ARTICLE_PROMPT", "DB_NAME"]
@@ -49,4 +57,3 @@ def load_config(config_path: str):
         raise ValueError(f"В файле {config_path} отсутствуют переменные: {', '.join(missing_vars)}")
 
     print(f"Конфигурация успешно загружена из {config_path}")
-
