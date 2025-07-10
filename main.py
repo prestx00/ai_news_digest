@@ -1,6 +1,8 @@
 import asyncio
+import argparse
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from src import (
+    config, # Импортируем модуль config
     database,
     telegram_parser,
     article_generator,
@@ -52,7 +54,10 @@ async def weekly_digest_job():
     database.mark_posts_as_processed(post_ids)
     print("Дайджест успешно создан и отправлен!")
 
-async def main_async():
+async def main_async(config_file: str):
+    # Загружаем конфигурацию
+    config.load_config(config_file)
+
     # Инициализация базы данных при первом запуске
     database.init_db()
     # database.reset_processed_posts()
@@ -61,7 +66,7 @@ async def main_async():
     # Запуск задачи каждую неделю, в пятницу в 20:40
     scheduler.add_job(weekly_digest_job, 'cron', day_of_week='fri', hour=22, minute=36)
 
-    print("Планировщик запущен. Следующий запуск в пятницу в 22:36.")
+    print(f"Планировщик для {config_file} запущен. Следующий запуск в пятницу в 22:36.")
     print("Нажмите Ctrl+C для выхода.")
 
     scheduler.start()
@@ -74,4 +79,12 @@ async def main_async():
         pass
 
 if __name__ == "__main__":
-    asyncio.run(main_async())
+    parser = argparse.ArgumentParser(description="Запуск бота для создания дайджестов.")
+    parser.add_argument(
+        "--config", 
+        default=".env.ai", 
+        help="Путь к файлу конфигурации (например, .env.ai или .env.hr)"
+    )
+    args = parser.parse_args()
+
+    asyncio.run(main_async(args.config))
