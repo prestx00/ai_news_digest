@@ -15,8 +15,8 @@ async def parse_channels():
             try:
                 entity = await client.get_entity(channel_name)
                 if isinstance(entity, Channel):
-                    print(f"Парсинг канала: {entity.title}")
-                    async for message in client.iter_messages(entity, limit=30):
+                    print(f"Парсинг канала: {entity.title} (лимит: {config.TELEGRAM_PARSE_LIMIT} постов)")
+                    async for message in client.iter_messages(entity, limit=config.TELEGRAM_PARSE_LIMIT):
                         # Формируем прямую ссылку на пост
                         source_link = f"https://t.me/{entity.username}/{message.id}"
                         # Проверяем наличие медиа (фото, видео, документ)
