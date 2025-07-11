@@ -54,12 +54,20 @@ async def weekly_digest_job():
     database.mark_posts_as_processed(post_ids)
     print("Дайджест успешно создан и отправлен!")
 
-async def main_async(config_file: str):
+async def main_async(config_file: str, init_session: bool):
     # Загружаем конфигурацию
     config.load_config(config_file)
 
     # Инициализация базы данных при первом запуске
     database.init_db()
+
+    # Если указан флаг --init-session, просто запускаем парсер и выходим
+    if init_session:
+        print("Запуск в режиме инициализации сессии...")
+        await telegram_parser.parse_channels()
+        print("Инициализация сессии завершена.")
+        return
+
     # database.reset_processed_posts()
     # Настройка планировщика
     scheduler = AsyncIOScheduler()
@@ -91,6 +99,11 @@ if __name__ == "__main__":
         default=".env.ai", 
         help="Путь к файлу конфигурации (например, .env.ai или .env.hr)"
     )
+    parser.add_argument(
+        "--init-session",
+        action="store_true", # Этот флаг не требует значения, он просто есть или его нет
+        help="Запустить парсер один раз для создания сессии Telegram и выйти."
+    )
     args = parser.parse_args()
 
-    asyncio.run(main_async(args.config))
+    asyncio.run(main_async(args.config, args.init_session))
