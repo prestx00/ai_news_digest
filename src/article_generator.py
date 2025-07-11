@@ -3,11 +3,12 @@ import random
 import asyncio
 from . import config
 
-# Создаем экземпляр асинхронного клиента OpenAI
-client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
+# Клиент будет инициализирован внутри функции, когда понадобится
 
 async def generate_article_and_summary(posts: list) -> tuple[str, str]:
     """Генерирует лонг-рид в HTML и краткое содержание на основе постов."""
+    # Инициализируем клиент здесь, когда конфигурация уже загружена
+    client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
     if not posts:
         return "", ""
 
