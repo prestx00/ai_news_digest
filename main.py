@@ -1,5 +1,6 @@
 import asyncio
 import argparse
+import pytz # Добавляем импорт pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from src import (
     config, # Импортируем модуль config
@@ -74,7 +75,7 @@ async def main_async(config_file: str, init_session: bool):
 
     # database.reset_processed_posts()
     # Настройка планировщика
-    scheduler = AsyncIOScheduler()
+    scheduler = AsyncIOScheduler(timezone=pytz.timezone('Europe/Moscow'))
     # Запуск задачи каждую неделю, в пятницу в 20:40
     scheduler.add_job(
         weekly_digest_job, 
