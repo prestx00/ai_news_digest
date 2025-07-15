@@ -61,7 +61,11 @@ async def main_async(config_file: str, init_session: bool):
     config.load_config(config_file)
 
     # Устанавливаем имя сессии на основе имени файла конфигурации
-    session_name = os.path.splitext(os.path.basename(config_file))[0]
+    file_base_name = os.path.basename(config_file)
+    if file_base_name.startswith('.env.'):
+        session_name = file_base_name[len('.env.'):]
+    else:
+        session_name = os.path.splitext(file_base_name)[0]
     config.SESSION_NAME = session_name
 
     # Инициализация базы данных при первом запуске

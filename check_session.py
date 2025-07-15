@@ -24,7 +24,11 @@ def main():
         sys.exit(1)
 
     # Устанавливаем имя сессии на основе имени файла конфигурации
-    session_name = os.path.splitext(os.path.basename(config_path))[0]
+    file_base_name = os.path.basename(config_path)
+    if file_base_name.startswith('.env.'):
+        session_name = file_base_name[len('.env.'):]
+    else:
+        session_name = os.path.splitext(file_base_name)[0]
     config.SESSION_NAME = session_name
 
     asyncio.run(check_session())
