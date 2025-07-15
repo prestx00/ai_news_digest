@@ -14,6 +14,7 @@ SCHEDULE_DAY_OF_WEEK = None
 SCHEDULE_HOUR = None
 SCHEDULE_MINUTE = None
 TELEGRAM_PARSE_LIMIT = None # Новая переменная
+SESSION_NAME = None
 
 def load_config(config_path: str):
     """Загружает конфигурацию из указанного .env файла."""

@@ -58,6 +58,14 @@ async def main_async(config_file: str, init_session: bool):
     # Загружаем конфигурацию
     config.load_config(config_file)
 
+    # Устанавливаем имя сессии на основе имени файла конфигурации
+    session_name = os.path.splitext(os.path.basename(config_file))[0]
+    config.SESSION_NAME = session_name
+
+    # Устанавливаем имя сессии на основе имени файла конфигурации
+    session_name = os.path.splitext(os.path.basename(config_file))[0]
+    config.SESSION_NAME = session_name
+
     # Инициализация базы данных при первом запуске
     database.init_db()
 

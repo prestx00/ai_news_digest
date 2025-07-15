@@ -7,7 +7,7 @@ from . import config, database
 async def parse_channels():
     """Парсит заданные каналы и сохраняет новые посты в базу данных."""
     # Используем имя сессии, чтобы Telethon сохранил авторизацию в файл
-    async with TelegramClient('telegram_session', config.API_ID, config.API_HASH) as client:
+    async with TelegramClient(config.SESSION_NAME, config.API_ID, config.API_HASH) as client:
         print("Парсер запущен...")
         for channel_name in config.TELEGRAM_CHANNELS:
             if not channel_name:
