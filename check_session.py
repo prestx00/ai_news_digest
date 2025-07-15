@@ -23,6 +23,10 @@ def main():
         print(f"Ошибка в конфигурации '{config_path}': {e}")
         sys.exit(1)
 
+    # Устанавливаем имя сессии на основе имени файла конфигурации
+    session_name = os.path.splitext(os.path.basename(config_path))[0]
+    config.SESSION_NAME = session_name
+
     asyncio.run(check_session())
 
 async def check_session():
@@ -30,7 +34,7 @@ async def check_session():
     Проверяет валидность файла telegram_session.session,
     пытаясь подключиться к Telegram и получить информацию о себе.
     """
-    session_name = 'telegram_session'
+    session_name = config.SESSION_NAME
     print(f"Пытаюсь подключиться, используя сессию '{session_name}.session'...")
 
     try:
