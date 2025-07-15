@@ -1,6 +1,7 @@
 import asyncio
 import argparse
 import pytz # Добавляем импорт pytz
+import os # Добавляем импорт os
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from src import (
     config, # Импортируем модуль config
