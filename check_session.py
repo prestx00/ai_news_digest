@@ -1,5 +1,6 @@
 
 
+import os # Добавляем импорт os
 import asyncio
 import sys
 from telethon.sync import TelegramClient
