@@ -24,13 +24,13 @@ async def generate_article_and_summary(posts: list) -> tuple[str, str]:
 
     try:
         response = await client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model="gpt-4.1",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
             ],
             temperature=0.6,
-            max_tokens=10000
+            max_tokens=32000
         )
         await asyncio.sleep(random.uniform(1, 3))
         content = response.choices[0].message.content
