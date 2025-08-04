@@ -41,16 +41,31 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         await asyncio.sleep(random.uniform(1, 3))
         content = response.choices[0].message.content
         print(f"Получен ответ от OpenAI, длина: {len(content)} символов")
-        if '---SUMMARY---' in content:
-            article_html, summary = content.split('---SUMMARY---', 1)
-            print("Статья успешно сгенерирована с кратким содержанием")
-            return article_html.strip(), summary.strip()
+
+        article_html = ""
+        summary = ""
+
+        # Новая, более чистая логика обработки
+        if prompt_template == config.SUMMARY_PROMPT:
+            print("Обработка ответа от SUMMARY_PROMPT.")
+            summary = content.strip()
+            # article_html остается пустым, так как мы генерировали только саммари
         else:
-            print("Статья сгенерирована, но краткое содержание не найдено")
-            return content.strip(), "Краткое содержание не было сгенерировано."
+            print("Обработка ответа от ARTICLE_PROMPT.")
+            if '---SUMMARY---' in content:
+                print("Статья успешно сгенерирована с кратким содержанием.")
+                article_html, summary = content.split('---SUMMARY---', 1)
+                article_html = article_html.strip()
+                summary = summary.strip()
+            else:
+                print("Статья сгенерирована, но краткое содержание не найдено.")
+                article_html = content.strip()
+                # summary остается пустым
+        
+        return article_html, summary
 
     except Exception as e:
         print(f"Ошибка при обращении к OpenAI: {e}")
         print(f"Тип ошибки: {type(e).__name__}")
         print(f"Детали ошибки: {str(e)}")
-        return "", ""
+        return "", ""}
