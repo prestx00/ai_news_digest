@@ -32,7 +32,7 @@ async def generate_article_and_summary(posts: list) -> tuple[str, str]:
                 {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
             ],
             temperature=0.6,
-            max_tokens=30000
+            max_tokens=20000
         )
         await asyncio.sleep(random.uniform(1, 3))
         content = response.choices[0].message.content
