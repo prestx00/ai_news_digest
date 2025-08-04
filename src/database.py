@@ -35,12 +35,14 @@ def add_post(channel: str, message_id: int, text: str, date: int, source_link: s
     finally:
         conn.close()
 
-def get_unprocessed_posts():
-    """Возвращает все необработанные посты (id, текст, ссылку, наличие медиа) из базы данных."""
+def get_unprocessed_posts(limit: int, offset: int):
+    """Возвращает пачку необработанных постов с использованием лимита и смещения."""
     conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
-    # Выбираем id, текст, ссылку на источник и наличие медиа
-    cursor.execute("SELECT id, text, source_link, has_media FROM posts WHERE is_processed = 0")
+    cursor.execute(
+        "SELECT id, text, source_link, has_media FROM posts WHERE is_processed = 0 ORDER BY date DESC LIMIT ? OFFSET ?",
+        (limit, offset)
+    )
     posts = cursor.fetchall()
     conn.close()
     return posts

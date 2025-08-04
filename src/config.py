@@ -9,6 +9,7 @@ CHAT_ID = None
 OPENAI_API_KEY = None
 TELEGRAM_CHANNELS = []
 ARTICLE_PROMPT = ""
+SUMMARY_PROMPT = "" # Промпт для коротких саммари
 DB_NAME = None
 SCHEDULE_DAY_OF_WEEK = None
 SCHEDULE_HOUR = None
@@ -23,7 +24,7 @@ def load_config(config_path: str):
     load_dotenv(dotenv_path=config_path)
 
     # Используем global, чтобы изменить переменные на уровне модуля
-    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT
+    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT
 
     # Telegram User API
     API_ID = int(os.getenv("API_ID"))
@@ -39,8 +40,9 @@ def load_config(config_path: str):
     # Каналы для парсинга
     TELEGRAM_CHANNELS = os.getenv("TELEGRAM_CHANNELS", "").split(',')
 
-    # Промпт для генерации статьи
+    # Промпты
     ARTICLE_PROMPT = os.getenv("ARTICLE_PROMPT")
+    SUMMARY_PROMPT = os.getenv("SUMMARY_PROMPT")
 
     # Имя файла базы данных
     DB_NAME = os.getenv("DB_NAME", "news.db")
@@ -54,7 +56,7 @@ def load_config(config_path: str):
     TELEGRAM_PARSE_LIMIT = int(os.getenv("TELEGRAM_PARSE_LIMIT", 30)) # По умолчанию 30
 
     # Проверка наличия обязательных переменных
-    required_vars = ["API_ID", "API_HASH", "BOT_TOKEN", "CHAT_ID", "OPENAI_API_KEY", "TELEGRAM_CHANNELS", "ARTICLE_PROMPT", "DB_NAME", "TELEGRAM_PARSE_LIMIT"]
+    required_vars = ["API_ID", "API_HASH", "BOT_TOKEN", "CHAT_ID", "OPENAI_API_KEY", "TELEGRAM_CHANNELS", "ARTICLE_PROMPT", "SUMMARY_PROMPT", "DB_NAME", "TELEGRAM_PARSE_LIMIT"]
     missing_vars = [var for var in required_vars if not globals().get(var)]
 
     if missing_vars:
