@@ -7,9 +7,11 @@ from . import config
 
 async def generate_article_and_summary(posts: list) -> tuple[str, str]:
     """Генерирует лонг-рид в HTML и краткое содержание на основе постов."""
+    print(f"Начинаем генерацию статьи. Количество постов: {len(posts)}")
     # Инициализируем клиент здесь, когда конфигурация уже загружена
     client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
     if not posts:
+        print("Нет постов для обработки")
         return "", ""
 
     # Форматируем посты для подачи в модель
@@ -34,12 +36,17 @@ async def generate_article_and_summary(posts: list) -> tuple[str, str]:
         )
         await asyncio.sleep(random.uniform(1, 3))
         content = response.choices[0].message.content
+        print(f"Получен ответ от OpenAI, длина: {len(content)} символов")
         if '---SUMMARY---' in content:
             article_html, summary = content.split('---SUMMARY---', 1)
+            print("Статья успешно сгенерирована с кратким содержанием")
             return article_html.strip(), summary.strip()
         else:
+            print("Статья сгенерирована, но краткое содержание не найдено")
             return content.strip(), "Краткое содержание не было сгенерировано."
 
     except Exception as e:
         print(f"Ошибка при обращении к OpenAI: {e}")
-        return {"article": "", "summary": ""} 
+        print(f"Тип ошибки: {type(e).__name__}")
+        print(f"Детали ошибки: {str(e)}")
+        return "", ""
