@@ -1,6 +1,7 @@
 import telegram
 import random
 import asyncio
+import re  # Импортируем модуль для работы с регулярными выражениями
 from . import config
 
 async def send_notification(summary: str, article_url: str):
@@ -9,8 +10,12 @@ async def send_notification(summary: str, article_url: str):
         print("Нет данных для отправки уведомления.")
         return
 
+    # Очищаем саммари от всех HTML-тегов, чтобы избежать ошибок парсинга
+    clean_summary = re.sub(r'<[^>]+>', '', summary).strip()
+
     bot = telegram.Bot(token=config.BOT_TOKEN)
-    message_text = f"**Мяу! Еженедельный AI-дайджест готов!**\n\n{summary}\n\n[Читать полный разбор]({article_url})"
+    # Используем очищенный текст в сообщении
+    message_text = f"**Мяу! Еженедельный AI-дайджест готов!**\n\n{clean_summary}\n\n[Читать полный разбор]({article_url})"
 
     try:
         await bot.send_message(
