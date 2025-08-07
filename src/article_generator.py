@@ -68,4 +68,4 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         print(f"Ошибка при обращении к OpenAI: {e}")
         print(f"Тип ошибки: {type(e).__name__}")
         print(f"Детали ошибки: {str(e)}")
-        return "", ""}
+        return "", ""

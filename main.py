@@ -98,7 +98,7 @@ async def weekly_digest_job():
     # 5. Отправка уведомления в Telegram
     print("\n[Шаг 5/5] Отправка уведомления в Telegram...")
     await telegram_notifier.send_notification(summary, article_url)
-    print("[ШаГ 5/5] Уведомление успешно отправлено.")
+    print("[Шаг 5/5] Уведомление успешно отправлено.")
 
     # 6. Отметка ВСЕХ обработанных постов как завершенных
     database.mark_posts_as_processed(all_posts_ids)
