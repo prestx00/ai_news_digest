@@ -53,7 +53,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
     if prompt_template == config.SUMMARY_PROMPT:
         request_params = {
             **base_params,
-            "max_completion_tokens": 16000,
+            "max_output_tokens": 16000,
             "reasoning": {"effort": "low"},
             # ВАЖНО: НЕ передаем temperature/top_p/penalties для gpt-5
         }
@@ -61,7 +61,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
     else:
         request_params = {
             **base_params,
-            "max_completion_tokens": 20000,
+            "max_output_tokens": 20000,
             "reasoning": {"effort": "medium"},
         }
         fallback_temperature = 0.55
@@ -88,7 +88,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
                 response = await client.responses.create(
                     model=request_params["model"],
                     input=input_text,
-                    max_completion_tokens=request_params.get("max_completion_tokens"),
+                    max_output_tokens=request_params.get("max_output_tokens"),
                     reasoning=request_params.get("reasoning"),
                     seed=request_params.get("seed"),
                     response_format=request_params.get("response_format"),
@@ -103,13 +103,13 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         if response is None:
             print("Переходим на fallback: chat.completions + gpt-4o")
 
-            # Конвертация max_completion_tokens -> max_tokens c разумной отсечкой
+            # Конвертация max_output_tokens -> max_tokens c безопасной отсечкой
             # (чтобы не прыгать за лимиты fallback-модели)
-            mct = request_params.get("max_completion_tokens", 16000)
-            fallback_max_tokens = min(mct, 20000)
+            mot = request_params.get("max_output_tokens", 16000)
+            fallback_max_tokens = min(mot, 8000)
 
             response = await client.chat.completions.create(
-                model="gpt-4.1",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"},
