@@ -20,10 +20,20 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
 
     # Форматируем посты для подачи в модель
     formatted_posts = ""
-    for post in posts:
-        text = post[1]
-        source_link = post[2]
-        has_media = "true" if post[3] else "false" # Получаем флаг has_media
+    # Особый случай: если нам передали уже готовый поток <post> (после первого этапа),
+    # не оборачиваем повторно
+    if len(posts) == 1 and isinstance(posts[0][1], str) and "<post>" in posts[0][1]:
+        formatted_posts = posts[0][1]
+    else:
+        for post in posts:
+            text = post[1]
+            source_link = post[2]
+            has_media = "true" if post[3] else "false"  # Получаем флаг has_media
+            # Строго следуем ожидаемому XML-формату в промптах
+            formatted_posts += (
+                f"<post>\n<content>{text}</content>\n<source>{source_link}</source>\n"
+                f"<has_media>{has_media}</has_media>\n</post>\n\n"
+            )
         formatted_posts += f"<post>\n<content>{text}</content>\n<source>{source_link}</source>\n<has_media>{has_media}</has_media>\n</post>\n\n"
 
     system_prompt = prompt_template

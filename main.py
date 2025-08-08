@@ -9,7 +9,8 @@ from src import (
     telegram_parser,
     article_generator,
     telegraph_publisher,
-    telegram_notifier
+    telegram_notifier,
+    postprocess
 )
 
 async def weekly_digest_job():
@@ -87,6 +88,12 @@ async def weekly_digest_job():
 
     # 4. Публикация в Telegra.ph
     print(f"\n[Шаг 4/5] Публикация статьи в Telegra.ph с заголовком: '{title}'...")
+    # 3.1 Постобработка: навигация и разбиение на разделы
+    article_html = postprocess.add_navigation_and_split(
+        article_html,
+        official_channels=config.OFFICIAL_CHANNELS or []
+    )
+
     article_url = await telegraph_publisher.publish_to_telegraph(title, article_html)
 
     if not article_url:

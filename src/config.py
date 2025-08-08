@@ -15,6 +15,14 @@ SCHEDULE_DAY_OF_WEEK = None
 SCHEDULE_HOUR = None
 SCHEDULE_MINUTE = None
 TELEGRAM_PARSE_LIMIT = None # Новая переменная
+OFFICIAL_CHANNELS = []  # Имена телеграм-каналов (username) официальных источников
+ENABLE_TOC = True
+NAVIGATION_TITLE = "🧭 Навигация"
+ENABLE_SECTION_SPLIT = False
+OFFICIAL_SECTION_TITLE = "Официальные источники"
+OTHER_SECTION_TITLE = "Другие источники"
+STRIP_ORIGINAL_SECTIONS = False
+STRIP_H3_TITLES = []
 
 def load_config(config_path: str):
     """Загружает конфигурацию из указанного .env файла."""
@@ -24,7 +32,7 @@ def load_config(config_path: str):
     load_dotenv(dotenv_path=config_path)
 
     # Используем global, чтобы изменить переменные на уровне модуля
-    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT
+    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT, OFFICIAL_CHANNELS, ENABLE_TOC, NAVIGATION_TITLE, ENABLE_SECTION_SPLIT, OFFICIAL_SECTION_TITLE, OTHER_SECTION_TITLE, STRIP_ORIGINAL_SECTIONS, STRIP_H3_TITLES
 
     # Telegram User API
     API_ID = int(os.getenv("API_ID"))
@@ -54,6 +62,18 @@ def load_config(config_path: str):
 
     # Лимит парсинга Telegram
     TELEGRAM_PARSE_LIMIT = int(os.getenv("TELEGRAM_PARSE_LIMIT", 30)) # По умолчанию 30
+
+    # Список официальных каналов (через запятую), например: "ozon,ozonnews,wildberries_official"
+    OFFICIAL_CHANNELS = [c.strip() for c in os.getenv("OFFICIAL_CHANNELS", "").split(',') if c.strip()]
+
+    # Постобработка: навигация и секции
+    ENABLE_TOC = os.getenv("ENABLE_TOC", "true").strip().lower() in ("1", "true", "yes")
+    NAVIGATION_TITLE = os.getenv("NAVIGATION_TITLE", "🧭 Навигация").strip()
+    ENABLE_SECTION_SPLIT = os.getenv("ENABLE_SECTION_SPLIT", "false").strip().lower() in ("1", "true", "yes")
+    OFFICIAL_SECTION_TITLE = os.getenv("OFFICIAL_SECTION_TITLE", "Официальные источники").strip()
+    OTHER_SECTION_TITLE = os.getenv("OTHER_SECTION_TITLE", "Другие источники").strip()
+    STRIP_ORIGINAL_SECTIONS = os.getenv("STRIP_ORIGINAL_SECTIONS", "false").strip().lower() in ("1", "true", "yes")
+    STRIP_H3_TITLES = [s.strip() for s in os.getenv("STRIP_H3_TITLES", "").split(',') if s.strip()]
 
     # Проверка наличия обязательных переменных
     required_vars = ["API_ID", "API_HASH", "BOT_TOKEN", "CHAT_ID", "OPENAI_API_KEY", "TELEGRAM_CHANNELS", "ARTICLE_PROMPT", "SUMMARY_PROMPT", "DB_NAME", "TELEGRAM_PARSE_LIMIT"]
