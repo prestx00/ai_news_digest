@@ -94,7 +94,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
                 # Сохраняем max_completion_tokens (для gpt-5), исключаем только несовместимые поля
                 fallback_params = {
                     k: v for k, v in request_params.items()
-                    if k not in ("seed", "response_format", "reasoning")
+                    if k not in ("seed", "response_format", "reasoning","model")
                 }
                 response = await client.chat.completions.create(
                     model="gpt-5",
