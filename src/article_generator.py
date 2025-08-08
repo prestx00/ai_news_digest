@@ -90,7 +90,6 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
                     input=input_text,
                     max_output_tokens=request_params.get("max_output_tokens"),
                     reasoning=request_params.get("reasoning"),
-                    response_format=request_params.get("response_format"),
                 )
             except Exception as e_inner:
                 last_error = e_inner
