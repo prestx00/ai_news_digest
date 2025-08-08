@@ -73,22 +73,29 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         response = None
         while attempt < 2 and response is None:
             try:
-                response = await client.chat.completions.create(
-                    messages=[
+                # Путь 1: Responses API (нужен для gpt-5 и max_completion_tokens)
+                response = await client.responses.create(
+                    model=request_params.get("model", "gpt-5"),
+                    input=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
                     ],
-                    **request_params
+                    temperature=request_params.get("temperature"),
+                    top_p=request_params.get("top_p"),
+                    max_completion_tokens=request_params.get("max_completion_tokens"),
+                    frequency_penalty=request_params.get("frequency_penalty"),
+                    presence_penalty=request_params.get("presence_penalty"),
+                    seed=request_params.get("seed"),
+                    response_format=request_params.get("response_format"),
+                    reasoning=request_params.get("reasoning"),
                 )
             except TypeError:
                 # Fallback для окружений/версий SDK без новых параметров
+                # Сохраняем max_completion_tokens (для gpt-5), исключаем только несовместимые поля
                 fallback_params = {
                     k: v for k, v in request_params.items()
-                    if k not in ("seed", "response_format", "reasoning", "model", "max_completion_tokens")
+                    if k not in ("seed", "response_format", "reasoning")
                 }
-                # Конвертируем ключ токенов
-                if "max_completion_tokens" in request_params:
-                    fallback_params["max_tokens"] = request_params["max_completion_tokens"]
                 response = await client.chat.completions.create(
                     model="gpt-5",
                     messages=[
@@ -106,7 +113,18 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
             raise last_error
 
         await asyncio.sleep(random.uniform(1, 3))
-        content = response.choices[0].message.content
+        # Унифицированное извлечение текста
+        content = None
+        # Responses API: пробуем output_text
+        content = getattr(response, "output_text", None)
+        if not content:
+            # Chat Completions API
+            try:
+                content = response.choices[0].message.content
+            except Exception:
+                pass
+        if not content:
+            raise RuntimeError("Не удалось извлечь текст ответа из OpenAI API")
         print(f"Получен ответ от OpenAI, длина: {len(content)} символов")
 
         article_html = ""
