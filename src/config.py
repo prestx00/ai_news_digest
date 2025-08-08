@@ -23,6 +23,9 @@ OFFICIAL_SECTION_TITLE = "Официальные источники"
 OTHER_SECTION_TITLE = "Другие источники"
 STRIP_ORIGINAL_SECTIONS = False
 STRIP_H3_TITLES = []
+TELEGRAPH_ACCESS_TOKEN = None
+TELEGRAPH_AUTHOR_NAME = None
+TELEGRAPH_AUTHOR_URL = None
 
 def load_config(config_path: str):
     """Загружает конфигурацию из указанного .env файла."""
@@ -32,7 +35,7 @@ def load_config(config_path: str):
     load_dotenv(dotenv_path=config_path)
 
     # Используем global, чтобы изменить переменные на уровне модуля
-    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT, OFFICIAL_CHANNELS, ENABLE_TOC, NAVIGATION_TITLE, ENABLE_SECTION_SPLIT, OFFICIAL_SECTION_TITLE, OTHER_SECTION_TITLE, STRIP_ORIGINAL_SECTIONS, STRIP_H3_TITLES
+    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT, OFFICIAL_CHANNELS, ENABLE_TOC, NAVIGATION_TITLE, ENABLE_SECTION_SPLIT, OFFICIAL_SECTION_TITLE, OTHER_SECTION_TITLE, STRIP_ORIGINAL_SECTIONS, STRIP_H3_TITLES, TELEGRAPH_ACCESS_TOKEN, TELEGRAPH_AUTHOR_NAME, TELEGRAPH_AUTHOR_URL
 
     # Telegram User API
     API_ID = int(os.getenv("API_ID"))
@@ -46,7 +49,7 @@ def load_config(config_path: str):
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
     # Каналы для парсинга
-    TELEGRAM_CHANNELS = os.getenv("TELEGRAM_CHANNELS", "").split(',')
+    TELEGRAM_CHANNELS = [c.strip() for c in os.getenv("TELEGRAM_CHANNELS", "").split(',') if c.strip()]
 
     # Промпты
     ARTICLE_PROMPT = os.getenv("ARTICLE_PROMPT")
@@ -74,6 +77,11 @@ def load_config(config_path: str):
     OTHER_SECTION_TITLE = os.getenv("OTHER_SECTION_TITLE", "Другие источники").strip()
     STRIP_ORIGINAL_SECTIONS = os.getenv("STRIP_ORIGINAL_SECTIONS", "false").strip().lower() in ("1", "true", "yes")
     STRIP_H3_TITLES = [s.strip() for s in os.getenv("STRIP_H3_TITLES", "").split(',') if s.strip()]
+
+    # Telegraph
+    TELEGRAPH_ACCESS_TOKEN = os.getenv("TELEGRAPH_ACCESS_TOKEN")
+    TELEGRAPH_AUTHOR_NAME = os.getenv("TELEGRAPH_AUTHOR_NAME", "AI Digest")
+    TELEGRAPH_AUTHOR_URL = os.getenv("TELEGRAPH_AUTHOR_URL", "")
 
     # Проверка наличия обязательных переменных
     required_vars = ["API_ID", "API_HASH", "BOT_TOKEN", "CHAT_ID", "OPENAI_API_KEY", "TELEGRAM_CHANNELS", "ARTICLE_PROMPT", "SUMMARY_PROMPT", "DB_NAME", "TELEGRAM_PARSE_LIMIT"]

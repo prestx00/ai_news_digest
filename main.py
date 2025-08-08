@@ -81,10 +81,19 @@ async def weekly_digest_job():
 
     print("[Шаг 3/5] Финальный лонгрид и саммари успешно сгенерированы.")
 
-    try:
-        title = article_html.split('<h1>')[1].split('</h1>')[0]
-    except IndexError:
-        title = "Еженедельный AI-дайджест"
+    # Извлекаем заголовок: сначала <h1>, иначе первый <h4> без тегов
+    import re
+    h1 = re.search(r"<h1>(.*?)</h1>", article_html, re.IGNORECASE | re.DOTALL)
+    if h1:
+        title = h1.group(1).strip()
+    else:
+        h4 = re.search(r"<h4>(.*?)</h4>", article_html, re.IGNORECASE | re.DOTALL)
+        if h4:
+            # Убираем вложенные теги из h4 (ссылку и т.п.)
+            title_text = re.sub(r"<[^>]+>", "", h4.group(1)).strip()
+            title = (title_text[:100] + '…') if len(title_text) > 100 else title_text
+        else:
+            title = "Еженедельный AI-дайджест"
 
     # 4. Публикация в Telegra.ph
     print(f"\n[Шаг 4/5] Публикация статьи в Telegra.ph с заголовком: '{title}'...")

@@ -13,9 +13,12 @@ async def send_notification(summary: str, article_url: str):
     # Очищаем саммари от всех HTML-тегов, чтобы избежать ошибок парсинга
     clean_summary = re.sub(r'<[^>]+>', '', summary).strip()
 
+    # Безопасный Markdown: экранируем квадратные скобки
+    safe_summary = clean_summary.replace('[', '\\[').replace(']', '\\]')
+
     bot = telegram.Bot(token=config.BOT_TOKEN)
     # Используем очищенный текст в сообщении
-    message_text = f"**Мяу! Еженедельный AI-дайджест готов!**\n\n{clean_summary}\n\n[Читать полный разбор]({article_url})"
+    message_text = f"**Мяу! Еженедельный AI-дайджест готов!**\n\n{safe_summary}\n\n[Читать полный разбор]({article_url})"
 
     try:
         await bot.send_message(

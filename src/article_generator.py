@@ -65,27 +65,41 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         }
 
     try:
-        response = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
-            ],
-            **request_params
-        )
-    except TypeError:
-        # Fallback для окружений/версий SDK без новых параметров
-        fallback_params = {
-            k: v for k, v in request_params.items()
-            if k not in ("seed", "response_format", "reasoning")
-        }
-        response = await client.chat.completions.create(
-            model="gpt-5",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
-            ],
-            **fallback_params
-        )
+        # Ретраи с простым backoff, плюс fallback на несовместимые поля
+        attempt = 0
+        last_error = None
+        response = None
+        while attempt < 2 and response is None:
+            try:
+                response = await client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
+                    ],
+                    **request_params
+                )
+            except TypeError:
+                # Fallback для окружений/версий SDK без новых параметров
+                fallback_params = {
+                    k: v for k, v in request_params.items()
+                    if k not in ("seed", "response_format", "reasoning")
+                }
+                response = await client.chat.completions.create(
+                    model="gpt-5",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
+                    ],
+                    **fallback_params
+                )
+            except Exception as e_inner:
+                last_error = e_inner
+                attempt += 1
+                await asyncio.sleep(2 * attempt)
+
+        if response is None and last_error is not None:
+            raise last_error
+
         await asyncio.sleep(random.uniform(1, 3))
         content = response.choices[0].message.content
         print(f"Получен ответ от OpenAI, длина: {len(content)} символов")
@@ -93,11 +107,9 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         article_html = ""
         summary = ""
 
-        # Новая, более чистая логика обработки
         if prompt_template == config.SUMMARY_PROMPT:
             print("Обработка ответа от SUMMARY_PROMPT.")
             summary = content.strip()
-            # article_html остается пустым, так как мы генерировали только саммари
         else:
             print("Обработка ответа от ARTICLE_PROMPT.")
             if '---SUMMARY---' in content:
@@ -108,8 +120,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
             else:
                 print("Статья сгенерирована, но краткое содержание не найдено.")
                 article_html = content.strip()
-                # summary остается пустым
-        
+
         return article_html, summary
 
     except Exception as e:

@@ -18,6 +18,11 @@ def init_db():
             UNIQUE(channel, message_id)
         )
     ''')
+    # Индекс для ускорения выборки необработанных постов по дате
+    cursor.execute('''
+        CREATE INDEX IF NOT EXISTS idx_posts_processed_date
+        ON posts(is_processed, date DESC)
+    ''')
     conn.commit()
     conn.close()
 
