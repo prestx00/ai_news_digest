@@ -34,19 +34,57 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
                 f"<post>\n<content>{text}</content>\n<source>{source_link}</source>\n"
                 f"<has_media>{has_media}</has_media>\n</post>\n\n"
             )
-        formatted_posts += f"<post>\n<content>{text}</content>\n<source>{source_link}</source>\n<has_media>{has_media}</has_media>\n</post>\n\n"
 
     system_prompt = prompt_template
 
+    # Параметры модели GPT-5 с учётом типа промпта
+    base_params = {
+        "model": "gpt-5",
+        "top_p": 1,
+        "seed": 42,
+        "response_format": {"type": "text"},
+    }
+
+    if prompt_template == config.SUMMARY_PROMPT:
+        request_params = {
+            **base_params,
+            "temperature": 0.25,
+            "max_tokens": 16000,
+            "reasoning": {"effort": "low"},
+            "frequency_penalty": 0.0,
+            "presence_penalty": 0.0,
+        }
+    else:
+        request_params = {
+            **base_params,
+            "temperature": 0.55,
+            "max_tokens": 20000,
+            "reasoning": {"effort": "medium"},
+            "frequency_penalty": 0.1,
+            "presence_penalty": 0.0,
+        }
+
     try:
         response = await client.chat.completions.create(
-            model="gpt-4.1",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
             ],
-            temperature=0.6,
-            max_tokens=20000
+            **request_params
+        )
+    except TypeError:
+        # Fallback для окружений/версий SDK без новых параметров
+        fallback_params = {
+            k: v for k, v in request_params.items()
+            if k not in ("seed", "response_format", "reasoning")
+        }
+        response = await client.chat.completions.create(
+            model="gpt-5",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
+            ],
+            **fallback_params
         )
         await asyncio.sleep(random.uniform(1, 3))
         content = response.choices[0].message.content
