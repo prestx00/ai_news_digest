@@ -45,11 +45,13 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         "response_format": {"type": "text"},
     }
 
+    # Для новых моделей (gpt-5) используем max_completion_tokens.
+    # В fallback автоматически переедем на max_tokens для старых SDK/эндпоинтов.
     if prompt_template == config.SUMMARY_PROMPT:
         request_params = {
             **base_params,
             "temperature": 0.25,
-            "max_tokens": 16000,
+            "max_completion_tokens": 16000,
             "reasoning": {"effort": "low"},
             "frequency_penalty": 0.0,
             "presence_penalty": 0.0,
@@ -58,7 +60,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         request_params = {
             **base_params,
             "temperature": 0.55,
-            "max_tokens": 20000,
+            "max_completion_tokens": 20000,
             "reasoning": {"effort": "medium"},
             "frequency_penalty": 0.1,
             "presence_penalty": 0.0,
@@ -82,8 +84,11 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
                 # Fallback для окружений/версий SDK без новых параметров
                 fallback_params = {
                     k: v for k, v in request_params.items()
-                    if k not in ("seed", "response_format", "reasoning", "model")
+                    if k not in ("seed", "response_format", "reasoning", "model", "max_completion_tokens")
                 }
+                # Конвертируем ключ токенов
+                if "max_completion_tokens" in request_params:
+                    fallback_params["max_tokens"] = request_params["max_completion_tokens"]
                 response = await client.chat.completions.create(
                     model="gpt-5",
                     messages=[
