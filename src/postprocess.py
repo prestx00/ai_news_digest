@@ -72,7 +72,8 @@ def _build_toc(blocks: List[dict]) -> str:
     lines = []
     for b in blocks:
         internal = f"<a href=\"#{b['anchor_id']}\">{b['title']}</a>"
-        external = f" — <a href=\"{b['href']}\">источник</a>" if b.get("href") else ""
+        # Визуально выделяем ссылку на источник квадратными скобками
+        external = f" — [<a href=\"{b['href']}\">источник</a>]" if b.get("href") else ""
         lines.append(f"• {internal}{external}")
     items = "<br>".join(lines)
     title = config.NAVIGATION_TITLE or "Навигация"
@@ -116,21 +117,29 @@ def add_navigation_and_split(html: str, official_channels: List[str]) -> str:
 
         prefix = strip_original_sections(prefix)
 
-    # Собираем новую структуру
-    rebuilt = [prefix, toc_html]
-
+    # Собираем контент без навигации
+    body_parts: List[str] = [prefix]
     if config.ENABLE_SECTION_SPLIT:
         if official_blocks:
-            rebuilt.append(f"<h3>{config.OFFICIAL_SECTION_TITLE}</h3>")
-            rebuilt.extend(official_blocks)
-
+            body_parts.append(f"<h3>{config.OFFICIAL_SECTION_TITLE}</h3>")
+            body_parts.extend(official_blocks)
         if other_blocks:
-            rebuilt.append(f"<h3>{config.OTHER_SECTION_TITLE}</h3>")
-            rebuilt.extend(other_blocks)
+            body_parts.append(f"<h3>{config.OTHER_SECTION_TITLE}</h3>")
+            body_parts.extend(other_blocks)
     else:
-        # Если секции выключены — восстанавливаем исходный порядок без заголовков
-        rebuilt.extend([b["html"] for b in blocks])
+        body_parts.extend([b["html"] for b in blocks])
 
-    return "".join(rebuilt)
+    body_html = "".join(body_parts)
+
+    # Вставляем навигацию строго ПЕРЕД первым <h3>
+    if toc_html:
+        first_h3 = re.search(r"<h3[^>]*>", body_html, re.IGNORECASE)
+        if first_h3:
+            insert_at = first_h3.start()
+            return body_html[:insert_at] + toc_html + body_html[insert_at:]
+        else:
+            return toc_html + body_html
+
+    return body_html
 
 

@@ -13,12 +13,35 @@ async def send_notification(summary: str, article_url: str):
     # Очищаем саммари от всех HTML-тегов, чтобы избежать ошибок парсинга
     clean_summary = re.sub(r'<[^>]+>', '', summary).strip()
 
-    # Безопасный Markdown: экранируем квадратные скобки
-    safe_summary = clean_summary.replace('[', '\\[').replace(']', '\\]')
+    # Безопасный Markdown: экранируем спецсимволы MarkdownV1 и добавляем эмодзи-префиксы
+    def md_escape(text: str) -> str:
+        return (text
+                .replace('_', '\\_')
+                .replace('*', '\\*')
+                .replace('[', '\\[')
+                .replace(']', '\\]')
+                .replace('(', '\\(')
+                .replace(')', '\\)')
+                .replace('~', '\\~')
+                .replace('`', '\\`')
+                .replace('>', '\\>')
+                .replace('#', '\\#')
+                .replace('+', '\\+')
+                .replace('-', '\\-')
+                .replace('=', '\\=')
+                .replace('|', '\\|')
+                .replace('{', '\\{')
+                .replace('}', '\\}')
+                .replace('.', '\\.')
+                .replace('!', '\\!')
+        )
+
+    # Не добавляем эмодзи программно — оставляем как сгенерировал ИИ
+    safe_summary = md_escape(clean_summary)
 
     bot = telegram.Bot(token=config.BOT_TOKEN)
     # Используем очищенный текст в сообщении
-    message_text = f"**Мяу! Еженедельный AI-дайджест готов!**\n\n{safe_summary}\n\n[Читать полный разбор]({article_url})"
+    message_text = f"**Мяу! Еженедельный {config.DIGEST_NAME} дайджест готов!**\n\n{safe_summary}\n\n[Читать полный разбор]({article_url})"
 
     try:
         await bot.send_message(
