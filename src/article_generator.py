@@ -1,130 +1,158 @@
 from openai import AsyncOpenAI
-import random
 import asyncio
+import random
+import html
 from . import config
 
-# Клиент будет инициализирован внутри функции, когда понадобится
+def _xml(text: str) -> str:
+    # Экранируем спецсимволы, чтобы не порвать XML
+    return html.escape(text or "", quote=True)
+
 
 async def generate_article_and_summary(posts: list, prompt_template: str = None) -> tuple[str, str]:
     """Генерирует лонг-рид в HTML и краткое содержание на основе постов."""
     print(f"Начинаем генерацию. Количество постов: {len(posts)}")
-    # Если специальный промпт не передан, используем основной промпт для статьи
+
     if prompt_template is None:
         prompt_template = config.ARTICLE_PROMPT
 
-    # Инициализируем клиент здесь, когда конфигурация уже загружена
     client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
+
     if not posts:
         print("Нет постов для обработки")
         return "", ""
 
-    # Форматируем посты для подачи в модель
-    formatted_posts = ""
-    # Особый случай: если нам передали уже готовый поток <post> (после первого этапа),
-    # не оборачиваем повторно
+    # Форматируем посты для подачи в модель (XML), экранируем содержимое
     if len(posts) == 1 and isinstance(posts[0][1], str) and "<post>" in posts[0][1]:
         formatted_posts = posts[0][1]
     else:
+        chunks = []
         for post in posts:
+            # ожидаем структуру: (id, text, source_link, has_media_bool, ...)
             text = post[1]
             source_link = post[2]
-            has_media = "true" if post[3] else "false"  # Получаем флаг has_media
-            # Строго следуем ожидаемому XML-формату в промптах
-            formatted_posts += (
-                f"<post>\n<content>{text}</content>\n<source>{source_link}</source>\n"
-                f"<has_media>{has_media}</has_media>\n</post>\n\n"
+            has_media = "true" if post[3] else "false"
+            chunks.append(
+                "<post>\n"
+                f"<content>{_xml(text)}</content>\n"
+                f"<source>{_xml(source_link)}</source>\n"
+                f"<has_media>{has_media}</has_media>\n"
+                "</post>\n"
             )
+        formatted_posts = "\n".join(chunks)
 
     system_prompt = prompt_template
 
-    # Параметры модели GPT-5 с учётом типа промпта
+    # --- Параметры модели GPT-5 (reasoning) ---
     base_params = {
         "model": "gpt-5",
-        "top_p": 1,
         "seed": 42,
-        "response_format": {"type": "text"},
+        "response_format": {"type": "text"},  # можно переключить на {"type": "json"} при необходимости
     }
 
-    # Для новых моделей (gpt-5) используем max_completion_tokens.
-    # В fallback автоматически переедем на max_tokens для старых SDK/эндпоинтов.
     if prompt_template == config.SUMMARY_PROMPT:
         request_params = {
             **base_params,
-            "temperature": 0.25,
             "max_completion_tokens": 16000,
             "reasoning": {"effort": "low"},
-            "frequency_penalty": 0.0,
-            "presence_penalty": 0.0,
+            # ВАЖНО: НЕ передаем temperature/top_p/penalties для gpt-5
         }
+        fallback_temperature = 0.25  # только для chat.completions
     else:
         request_params = {
             **base_params,
-            "temperature": 0.55,
             "max_completion_tokens": 20000,
             "reasoning": {"effort": "medium"},
-            "frequency_penalty": 0.1,
-            "presence_penalty": 0.0,
         }
+        fallback_temperature = 0.55
+
+    # Собираем вход под Responses API.
+    # В responses лучше отправить единый input-текст, чтобы не нарваться на несовместимость "messages" в SDK.
+    input_text = (
+        "### System Instructions\n"
+        f"{system_prompt}\n\n"
+        "### User Content\n"
+        "Вот подборка новостей за неделю:\n\n"
+        f"{formatted_posts}"
+    )
 
     try:
-        # Ретраи с простым backoff, плюс fallback на несовместимые поля
         attempt = 0
         last_error = None
         response = None
+
         while attempt < 2 and response is None:
             try:
-                # Путь 1: Responses API (нужен для gpt-5 и max_completion_tokens)
+                # Путь 1: Responses API — корректный путь для gpt-5
+                # НЕ передаём temperature/top_p/penalties (они либо игнорируются, либо дают 400)
                 response = await client.responses.create(
-                    model=request_params.get("model", "gpt-5"),
-                    input=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
-                    ],
-                    temperature=request_params.get("temperature"),
-                    top_p=request_params.get("top_p"),
+                    model=request_params["model"],
+                    input=input_text,
                     max_completion_tokens=request_params.get("max_completion_tokens"),
-                    frequency_penalty=request_params.get("frequency_penalty"),
-                    presence_penalty=request_params.get("presence_penalty"),
+                    reasoning=request_params.get("reasoning"),
                     seed=request_params.get("seed"),
                     response_format=request_params.get("response_format"),
-                    reasoning=request_params.get("reasoning"),
-                )
-            except TypeError:
-                # Fallback для окружений/версий SDK без новых параметров
-                # Сохраняем max_completion_tokens (для gpt-5), исключаем только несовместимые поля
-                fallback_params = {
-                    k: v for k, v in request_params.items()
-                    if k not in ("seed", "response_format", "reasoning","model")
-                }
-                response = await client.chat.completions.create(
-                    model="gpt-5",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"}
-                    ],
-                    **fallback_params
                 )
             except Exception as e_inner:
                 last_error = e_inner
                 attempt += 1
-                await asyncio.sleep(2 * attempt)
+                print(f"[Attempt {attempt}] Responses API error: {e_inner}")
+                await asyncio.sleep(1.0 * attempt)
 
-        if response is None and last_error is not None:
-            raise last_error
+        # Если не вышло — fallback на chat.completions с совместимыми параметрами и моделью
+        if response is None:
+            print("Переходим на fallback: chat.completions + gpt-4o")
 
-        await asyncio.sleep(random.uniform(1, 3))
+            # Конвертация max_completion_tokens -> max_tokens c разумной отсечкой
+            # (чтобы не прыгать за лимиты fallback-модели)
+            mct = request_params.get("max_completion_tokens", 16000)
+            fallback_max_tokens = min(mct, 20000)
+
+            response = await client.chat.completions.create(
+                model="gpt-4.1",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Вот подборка новостей за неделю:\n\n{formatted_posts}"},
+                ],
+                max_tokens=fallback_max_tokens,
+                temperature=fallback_temperature,
+                top_p=1,
+                frequency_penalty=0.1 if prompt_template != config.SUMMARY_PROMPT else 0.0,
+                presence_penalty=0.0,
+            )
+
+        await asyncio.sleep(random.uniform(0.5, 1.5))
+
         # Унифицированное извлечение текста
         content = None
-        # Responses API: пробуем output_text
+
+        # 1) Responses API (новые модели): у многих SDK есть .output_text
         content = getattr(response, "output_text", None)
+
+        # 2) Доп. попытка — некоторые SDK возвращают "output" массив
+        if not content and hasattr(response, "output"):
+            try:
+                # Пытаемся собрать текст из структурированного вывода
+                parts = []
+                for block in getattr(response, "output", []):
+                    for item in block.get("content", []):
+                        if isinstance(item, dict) and "text" in item:
+                            parts.append(item["text"])
+                if parts:
+                    content = "\n".join(parts)
+            except Exception:
+                pass
+
+        # 3) Chat Completions
         if not content:
-            # Chat Completions API
             try:
                 content = response.choices[0].message.content
             except Exception:
                 pass
+
         if not content:
             raise RuntimeError("Не удалось извлечь текст ответа из OpenAI API")
+
         print(f"Получен ответ от OpenAI, длина: {len(content)} символов")
 
         article_html = ""
