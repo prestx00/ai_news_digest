@@ -10,7 +10,7 @@ async def publish_to_telegraph(title: str, html_content: str) -> str:
     """
     telegraph = Telegraph()
     if config.TELEGRAPH_ACCESS_TOKEN:
-        telegraph.token = config.TELEGRAPH_ACCESS_TOKEN
+        telegraph.access_token = config.TELEGRAPH_ACCESS_TOKEN
     else:
         account = telegraph.create_account(short_name=config.TELEGRAPH_AUTHOR_NAME or 'AI Digest')
         # Логично сохранить полученный token вручную в .env
