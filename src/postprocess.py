@@ -73,20 +73,78 @@ def _build_toc(blocks: List[dict]) -> str:
         external = f" — [<a href=\"{b['href']}\">источник</a>]" if b.get("href") else ""
         
         if nav_style == "list":
-            lines.append(f"<li>{internal}{external}</li>")
+            lines.append(f"<div style=\"margin: 8px 0;\">• {internal}{external}</div>")
         else:  # paragraph style
             lines.append(f"• {internal}{external}")
     
     title = config.NAVIGATION_TITLE or "Навигация"
     
     if nav_style == "list":
-        # Используем ul/li для лучшей совместимости с мобильными стилями Telegra.ph
+        # Используем div с inline стилями для избежания конфликтов с Telegra.ph
         items = "".join(lines)
-        return f"<h3>{title}</h3><ul>{items}</ul><br>"
+        return f"<h3>{title}</h3><div style=\"margin: 16px 0;\">{items}</div><br>"
     else:
         # Используем p с <br> для совместимости со старым форматом
         items = "<br>".join(lines)
         return f"<h3>{title}</h3><p>{items}</p><br>"
+
+def _reorder_sections(html: str) -> str:
+    """Переупорядочивает секции в правильном порядке."""
+    # Ищем все секции h3 и их содержимое
+    h3_pattern = re.compile(r'<h3[^>]*>(.*?)</h3>', re.DOTALL | re.IGNORECASE)
+    sections = []
+    
+    # Находим все секции
+    for match in h3_pattern.finditer(html):
+        section_title = match.group(1).strip()
+        section_start = match.start()
+        
+        # Находим конец секции (следующий h3 или конец документа)
+        next_h3 = h3_pattern.search(html, section_start + 1)
+        section_end = next_h3.start() if next_h3 else len(html)
+        
+        section_content = html[section_start:section_end]
+        sections.append({
+            'title': section_title,
+            'content': section_content,
+            'start': section_start,
+            'end': section_end
+        })
+    
+    if not sections:
+        return html
+    
+    # Определяем правильный порядок секций
+    section_order = [
+        "Официальные источники",
+        "Срочно к действию", 
+        "Другие источники",
+        "Стратегические инсайты"
+    ]
+    
+    # Сортируем секции по правильному порядку
+    ordered_sections = []
+    for target_title in section_order:
+        for section in sections:
+            if target_title.lower() in section['title'].lower():
+                ordered_sections.append(section)
+                break
+    
+    # Добавляем секции, которые не попали в список
+    for section in sections:
+        if section not in ordered_sections:
+            ordered_sections.append(section)
+    
+    # Собираем HTML заново
+    prefix_end = sections[0]['start'] if sections else len(html)
+    prefix = html[:prefix_end]
+    
+    body_parts = [prefix]
+    for section in ordered_sections:
+        body_parts.append(section['content'])
+    
+    return "".join(body_parts)
+
 
 def add_navigation_and_split(html: str, official_channels: List[str]) -> str:
     """Добавляет раздел «Навигация» и разбивает новости на два раздела по источнику."""
@@ -134,6 +192,10 @@ def add_navigation_and_split(html: str, official_channels: List[str]) -> str:
         body_parts.extend([b["html"] for b in blocks])
 
     body_html = "".join(body_parts)
+    
+    # Переупорядочиваем секции в правильном порядке (если включено)
+    if getattr(config, 'ENABLE_SECTION_REORDER', True):
+        body_html = _reorder_sections(body_html)
 
     # Вставляем навигацию строго ПЕРЕД первым <h3>
     if toc_html:
