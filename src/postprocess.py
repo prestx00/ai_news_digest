@@ -73,16 +73,17 @@ def _build_toc(blocks: List[dict]) -> str:
         external = f" — [<a href=\"{b['href']}\">источник</a>]" if b.get("href") else ""
         
         if nav_style == "list":
-            lines.append(f"<div style=\"margin: 8px 0;\">• {internal}{external}</div>")
+            lines.append(f"<li>{internal}{external}</li>")
         else:  # paragraph style
             lines.append(f"• {internal}{external}")
     
     title = config.NAVIGATION_TITLE or "Навигация"
     
     if nav_style == "list":
-        # Используем div с inline стилями для избежания конфликтов с Telegra.ph
+        # Используем ul/li с пустыми p тегами для изоляции от конфликтов с CSS Telegra.ph
+        # Пустые <p></p> теги помогают избежать применения стилей к ul/li элементам
         items = "".join(lines)
-        return f"<h3>{title}</h3><div style=\"margin: 16px 0;\">{items}</div><br>"
+        return f"<h3>{title}</h3><p></p><ul>{items}</ul><p></p><br>"
     else:
         # Используем p с <br> для совместимости со старым форматом
         items = "<br>".join(lines)
