@@ -54,7 +54,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
         request_params = {
             **base_params,
             "max_output_tokens": 16000,
-            "reasoning": {"effort": "low"},
+            "reasoning": {"effort": "minimal"},
             # ВАЖНО: НЕ передаем temperature/top_p/penalties для gpt-5
         }
         fallback_temperature = 0.25  # только для chat.completions
