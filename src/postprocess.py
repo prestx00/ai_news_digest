@@ -21,25 +21,51 @@ def _extract_username_from_tme(url: str) -> str:
 def _split_news_blocks(html: str) -> Tuple[str, List[dict]]:
     """Разбивает HTML статьи на префикс (до первой новости) и список блоков новостей."""
     blocks = []
-    h4_pattern = re.compile(r"<h4>(.*?)</h4>", re.DOTALL | re.IGNORECASE)
-    positions = [(m.start(), m.end(), m.group(1)) for m in h4_pattern.finditer(html)]
-
-    if not positions:
+    # Паттерн для поиска h4 тегов, включая те, что с атрибутами
+    h4_pattern = re.compile(r"(<h4[^>]*>.*?</h4>)", re.DOTALL | re.IGNORECASE)
+    # Паттерн для извлечения содержимого и атрибутов из h4 тега
+    h4_content_pattern = re.compile(r"<h4[^>]*>(.*?)</h4>", re.DOTALL | re.IGNORECASE)
+    
+    # Находим все полные блоки h4
+    all_h4_tags = [m.group(1) for m in h4_pattern.finditer(html)]
+    if not all_h4_tags:
         return html, []
 
-    prefix = html[: positions[0][0]]
-    for idx, (start, end, h4_inner) in enumerate(positions):
-        next_start = positions[idx + 1][0] if idx + 1 < len(positions) else len(html)
-        block_html = html[start:next_start]
+    # Находим позиции, чтобы отделить префикс
+    first_h4_match = h4_pattern.search(html)
+    prefix = html[:first_h4_match.start()] if first_h4_match else html
+    
+    # Разделяем основной контент по h4 тегам
+    # В `split` первый элемент будет пустой строкой, если html начинается с h4, отбрасываем его
+    content_after_prefix = html[first_h4_match.start():]
+    split_content = h4_pattern.split(content_after_prefix)[1:]
+    
+    # Собираем блоки: тег h4 + следующий за ним контент
+    news_html_blocks = [tag + content for tag, content in zip(split_content[::2], split_content[1::2])]
+
+    for block_html in news_html_blocks:
+        h4_tag_match = h4_pattern.search(block_html)
+        if not h4_tag_match:
+            continue
+        
+        h4_full_tag = h4_tag_match.group(1)
+        h4_inner_match = h4_content_pattern.search(h4_full_tag)
+        h4_inner = h4_inner_match.group(1) if h4_inner_match else ""
+
         href_match = re.search(r"<a\s+href=\"([^\"]+)\"", h4_inner, re.IGNORECASE)
         href = href_match.group(1) if href_match else ""
+        
         title_text = unescape(re.sub(r"<[^>]+>", "", h4_inner).strip())
+        
+        category_match = re.search(r"data-category=\"([^\"]+)\"", h4_full_tag, re.IGNORECASE)
+        category = category_match.group(1) if category_match else "Без категории"
 
         blocks.append({
             "h4_inner": h4_inner,
             "href": href,
             "title": title_text,
-            "html": block_html,
+            "html": block_html.strip(),
+            "category": category,
         })
 
     return prefix, blocks
@@ -58,36 +84,52 @@ def _prepare_anchors(blocks: List[dict]) -> List[dict]:
 
 
 def _build_toc(blocks: List[dict]) -> str:
-    """Строит HTML-навигацию по заголовкам в разрешённом формате."""
+    """Строит HTML-навигацию по заголовкам в разрешённом формате с категориями."""
     if not blocks:
         return ""
-    
+
+    # Группируем блоки по категориям
+    categorized_blocks = {}
+    category_order = [] # Сохраняем порядок категорий, как они появляются в статье
+    for block in blocks:
+        category = block.get("category", "Другие источники")
+        if category not in categorized_blocks:
+            categorized_blocks[category] = []
+            category_order.append(category)
+        categorized_blocks[category].append(block)
+
     # Определяем стиль навигации из конфигурации
     nav_style = getattr(config, 'NAVIGATION_STYLE', 'list').lower()
     
-    lines = []
-    for b in blocks:
-        # URL-кодируем якорь для href, чтобы ссылка была валидной
-        encoded_anchor = urllib.parse.quote(b['anchor_id'])
-        internal = f"<a href=\"#{encoded_anchor}\">{b['title']}</a>"
-        external = f" — [<a href=\"{b['href']}\">источник</a>]" if b.get("href") else ""
+    toc_parts = []
+    title = config.NAVIGATION_TITLE or "Навигация"
+    toc_parts.append(f"<h3>{title}</h3>")
+
+    # Используем сохраненный порядок категорий
+    for category in category_order:
+        cat_blocks = categorized_blocks[category]
+        toc_parts.append(f"<p><strong>{category}</strong></p>")
+        lines = []
+        for b in cat_blocks:
+            # URL-кодируем якорь для href, чтобы ссылка была валидной
+            encoded_anchor = urllib.parse.quote(b['anchor_id'])
+            internal = f"<a href=\"#{encoded_anchor}\">{b['title']}</a>"
+            external = f" — [<a href=\"{b['href']}\">источник</a>]" if b.get("href") else ""
+            
+            if nav_style == "list":
+                lines.append(f"<li>{internal}{external}</li>")
+            else:  # paragraph style
+                lines.append(f"• {internal}{external}")
         
         if nav_style == "list":
-            lines.append(f"<li>{internal}{external}</li>")
-        else:  # paragraph style
-            lines.append(f"• {internal}{external}")
-    
-    title = config.NAVIGATION_TITLE or "Навигация"
-    
-    if nav_style == "list":
-        # Используем ul/li с пустыми p тегами для изоляции от конфликтов с CSS Telegra.ph
-        # Пустые <p></p> теги помогают избежать применения стилей к ul/li элементам
-        items = "".join(lines)
-        return f"<h3>{title}</h3><p></p><ul>{items}</ul><p></p><br>"
-    else:
-        # Используем p с <br> для совместимости со старым форматом
-        items = "<br>".join(lines)
-        return f"<h3>{title}</h3><p>{items}</p><br>"
+            items = "".join(lines)
+            toc_parts.append(f"<p></p><ul>{items}</ul><p></p>")
+        else:
+            items = "<br>".join(lines)
+            toc_parts.append(f"<p>{items}</p>")
+
+    toc_parts.append("<br>")
+    return "".join(toc_parts)
 
 
 
@@ -116,14 +158,7 @@ def add_navigation_and_split(html: str, official_channels: List[str]) -> str:
         else:
             other_blocks.append(b["html"])
 
-    # Удаляем оригинальные секции h3 из префикса (если требуется)
-    if config.STRIP_ORIGINAL_SECTIONS:
-        def strip_original_sections(s: str) -> str:
-            sections = config.STRIP_H3_TITLES or []
-            for name in sections:
-                s = re.sub(rf"<h3>[^<]*{re.escape(name)}[^<]*</h3>", "", s, flags=re.IGNORECASE)
-            return s
-        prefix = strip_original_sections(prefix)
+    
 
     # Собираем контент без навигации
     body_parts: List[str] = [prefix]
