@@ -61,16 +61,32 @@ def _build_toc(blocks: List[dict]) -> str:
     """Строит HTML-навигацию по заголовкам в разрешённом формате."""
     if not blocks:
         return ""
+    
+    # Определяем стиль навигации из конфигурации
+    nav_style = getattr(config, 'NAVIGATION_STYLE', 'list').lower()
+    
     lines = []
     for b in blocks:
         # URL-кодируем якорь для href, чтобы ссылка была валидной
         encoded_anchor = urllib.parse.quote(b['anchor_id'])
         internal = f"<a href=\"#{encoded_anchor}\">{b['title']}</a>"
         external = f" — [<a href=\"{b['href']}\">источник</a>]" if b.get("href") else ""
-        lines.append(f"• {internal}{external}")
-    items = "<br>".join(lines)
+        
+        if nav_style == "list":
+            lines.append(f"<li>{internal}{external}</li>")
+        else:  # paragraph style
+            lines.append(f"• {internal}{external}")
+    
     title = config.NAVIGATION_TITLE or "Навигация"
-    return f"<h3>{title}</h3><p>{items}</p><br>"
+    
+    if nav_style == "list":
+        # Используем ul/li для лучшей совместимости с мобильными стилями Telegra.ph
+        items = "".join(lines)
+        return f"<h3>{title}</h3><ul>{items}</ul><br>"
+    else:
+        # Используем p с <br> для совместимости со старым форматом
+        items = "<br>".join(lines)
+        return f"<h3>{title}</h3><p>{items}</p><br>"
 
 def add_navigation_and_split(html: str, official_channels: List[str]) -> str:
     """Добавляет раздел «Навигация» и разбивает новости на два раздела по источнику."""

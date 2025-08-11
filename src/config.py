@@ -18,6 +18,7 @@ TELEGRAM_PARSE_LIMIT = None # Новая переменная
 OFFICIAL_CHANNELS = []  # Имена телеграм-каналов (username) официальных источников
 ENABLE_TOC = True
 NAVIGATION_TITLE = "🧭 Навигация"
+NAVIGATION_STYLE = "list"  # "list" для ul/li или "paragraph" для p
 ENABLE_SECTION_SPLIT = False
 OFFICIAL_SECTION_TITLE = "Официальные источники"
 OTHER_SECTION_TITLE = "Другие источники"
@@ -36,7 +37,7 @@ def load_config(config_path: str):
     load_dotenv(dotenv_path=config_path)
 
     # Используем global, чтобы изменить переменные на уровне модуля
-    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT, OFFICIAL_CHANNELS, ENABLE_TOC, NAVIGATION_TITLE, ENABLE_SECTION_SPLIT, OFFICIAL_SECTION_TITLE, OTHER_SECTION_TITLE, STRIP_ORIGINAL_SECTIONS, STRIP_H3_TITLES, TELEGRAPH_ACCESS_TOKEN, TELEGRAPH_AUTHOR_NAME, TELEGRAPH_AUTHOR_URL, DIGEST_NAME
+    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT, OFFICIAL_CHANNELS, ENABLE_TOC, NAVIGATION_TITLE, NAVIGATION_STYLE, ENABLE_SECTION_SPLIT, OFFICIAL_SECTION_TITLE, OTHER_SECTION_TITLE, STRIP_ORIGINAL_SECTIONS, STRIP_H3_TITLES, TELEGRAPH_ACCESS_TOKEN, TELEGRAPH_AUTHOR_NAME, TELEGRAPH_AUTHOR_URL, DIGEST_NAME
 
     # Telegram User API
     API_ID = int(os.getenv("API_ID"))
@@ -73,6 +74,7 @@ def load_config(config_path: str):
     # Постобработка: навигация и секции
     ENABLE_TOC = os.getenv("ENABLE_TOC", "true").strip().lower() in ("1", "true", "yes")
     NAVIGATION_TITLE = os.getenv("NAVIGATION_TITLE", "🧭 Навигация").strip()
+    NAVIGATION_STYLE = os.getenv("NAVIGATION_STYLE", "list").strip().lower()  # "list" или "paragraph"
     ENABLE_SECTION_SPLIT = os.getenv("ENABLE_SECTION_SPLIT", "false").strip().lower() in ("1", "true", "yes")
     OFFICIAL_SECTION_TITLE = os.getenv("OFFICIAL_SECTION_TITLE", "Официальные источники").strip()
     OTHER_SECTION_TITLE = os.getenv("OTHER_SECTION_TITLE", "Другие источники").strip()
