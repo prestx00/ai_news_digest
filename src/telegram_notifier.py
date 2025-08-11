@@ -13,8 +13,7 @@ async def send_notification(summary: str, article_url: str):
     # Очищаем саммари от всех HTML-тегов, чтобы избежать ошибок парсинга
     clean_summary = re.sub(r'<[^>]+>', '', summary).strip()
 
-    # Экранирование отключено по запросу пользователя.
-    # Форматирование может быть непредсказуемым в зависимости от текста.
+
     safe_summary = clean_summary
 
     bot = telegram.Bot(token=config.BOT_TOKEN)
