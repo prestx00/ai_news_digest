@@ -13,31 +13,9 @@ async def send_notification(summary: str, article_url: str):
     # Очищаем саммари от всех HTML-тегов, чтобы избежать ошибок парсинга
     clean_summary = re.sub(r'<[^>]+>', '', summary).strip()
 
-    # Безопасный Markdown: экранируем спецсимволы MarkdownV1 и добавляем эмодзи-префиксы
-    def md_escape(text: str) -> str:
-        return (text
-                .replace('_', '\\_')
-                .replace('*', '\\*')
-                .replace('[', '\\[')
-                .replace(']', '\\]')
-                .replace('(', '\\(')
-                .replace(')', '\\)')
-                .replace('~', '\\~')
-                .replace('`', '\\`')
-                .replace('>', '\\>')
-                .replace('#', '\\#')
-                .replace('+', '\\+')
-                .replace('-', '\\-')
-                .replace('=', '\\=')
-                .replace('|', '\\|')
-                .replace('{', '\\{')
-                .replace('}', '\\}')
-                .replace('.', '\\.')
-                .replace('!', '\\!')
-        )
-
-    # Не добавляем эмодзи программно — оставляем как сгенерировал ИИ
-    safe_summary = md_escape(clean_summary)
+    # Экранирование отключено по запросу пользователя.
+    # Форматирование может быть непредсказуемым в зависимости от текста.
+    safe_summary = clean_summary
 
     bot = telegram.Bot(token=config.BOT_TOKEN)
     # Используем очищенный текст в сообщении
