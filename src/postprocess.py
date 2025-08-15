@@ -173,17 +173,22 @@ def add_navigation_and_split(html: str, official_channels: List[str]) -> str:
         body_parts.extend([b["html"] for b in blocks])
 
     body_html = "".join(body_parts)
-    
-    
 
-    # Вставляем навигацию строго ПЕРЕД первым <h3>
+    # Вставляем навигацию
     if toc_html:
-        first_h3 = re.search(r"<h3[^>]*>", body_html, re.IGNORECASE)
-        if first_h3:
-            insert_at = first_h3.start()
+        # Если разделение на секции включено, ищем <h3> для вставки навигации.
+        # Иначе, ищем первую новость (<h4>), чтобы вставить навигацию перед ней.
+        if config.ENABLE_SECTION_SPLIT:
+            insertion_marker = re.search(r"<h3[^>]*>", body_html, re.IGNORECASE)
+        else:
+            insertion_marker = re.search(r"<h4[^>]*>", body_html, re.IGNORECASE)
+
+        if insertion_marker:
+            insert_at = insertion_marker.start()
             return body_html[:insert_at] + toc_html + body_html[insert_at:]
         else:
-            return toc_html + body_html
+            # Если маркер не найден (например, нет новостей), добавляем TOC в конец.
+            return body_html + toc_html
 
     return body_html
 

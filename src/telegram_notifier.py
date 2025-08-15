@@ -51,7 +51,6 @@ async def send_test_notification():
         
 async def send_error_notification(error_message: str):
     """Отправляет уведомление об ошибке."""
-    bot = telegram.Bot(token=config.BOT_TOKEN)
     message_text = f"**Произошла ошибка в работе AI News Digest:**\n\n`{error_message}`"
     try:
         await bot.send_message(
