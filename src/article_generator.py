@@ -61,7 +61,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
     else:
         request_params = {
             **base_params,
-            "max_output_tokens": 19000,
+            "max_output_tokens": 17000,
             "reasoning": {"effort": "medium"},
         }
         fallback_temperature = 0.55
