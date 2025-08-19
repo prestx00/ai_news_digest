@@ -1,21 +1,21 @@
 import os
+import json
 from dotenv import load_dotenv
 
 # Объявляем переменные на уровне модуля, чтобы IDE их видела
 API_ID = None
 API_HASH = None
 BOT_TOKEN = None
-CHAT_ID = None
-MESSAGE_THREAD_ID = None
+TELEGRAM_RECIPIENTS = []  # Новая переменная для получателей
 OPENAI_API_KEY = None
 TELEGRAM_CHANNELS = []
 ARTICLE_PROMPT = ""
-SUMMARY_PROMPT = "" # Промпт для коротких саммари
+SUMMARY_PROMPT = ""  # Промпт для коротких саммари
 DB_NAME = None
 SCHEDULE_DAY_OF_WEEK = None
 SCHEDULE_HOUR = None
 SCHEDULE_MINUTE = None
-TELEGRAM_PARSE_LIMIT = None # Новая переменная
+TELEGRAM_PARSE_LIMIT = None  # Новая переменная
 OFFICIAL_CHANNELS = []  # Имена телеграм-каналов (username) официальных источников
 ENABLE_TOC = True
 NAVIGATION_TITLE = "🧭 Навигация"
@@ -37,7 +37,7 @@ def load_config(config_path: str):
     load_dotenv(dotenv_path=config_path)
 
     # Используем global, чтобы изменить переменные на уровне модуля
-    global API_ID, API_HASH, BOT_TOKEN, CHAT_ID, MESSAGE_THREAD_ID, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT, OFFICIAL_CHANNELS, ENABLE_TOC, NAVIGATION_TITLE, NAVIGATION_STYLE, ENABLE_SECTION_SPLIT, OFFICIAL_SECTION_TITLE, OTHER_SECTION_TITLE, TELEGRAPH_ACCESS_TOKEN, TELEGRAPH_AUTHOR_NAME, TELEGRAPH_AUTHOR_URL, DIGEST_NAME
+    global API_ID, API_HASH, BOT_TOKEN, TELEGRAM_RECIPIENTS, OPENAI_API_KEY, TELEGRAM_CHANNELS, ARTICLE_PROMPT, SUMMARY_PROMPT, DB_NAME, SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR, SCHEDULE_MINUTE, TELEGRAM_PARSE_LIMIT, OFFICIAL_CHANNELS, ENABLE_TOC, NAVIGATION_TITLE, NAVIGATION_STYLE, ENABLE_SECTION_SPLIT, OFFICIAL_SECTION_TITLE, OTHER_SECTION_TITLE, TELEGRAPH_ACCESS_TOKEN, TELEGRAPH_AUTHOR_NAME, TELEGRAPH_AUTHOR_URL, DIGEST_NAME
 
     # Telegram User API
     API_ID = int(os.getenv("API_ID"))
@@ -45,8 +45,14 @@ def load_config(config_path: str):
 
     # Telegram Bot API
     BOT_TOKEN = os.getenv("BOT_TOKEN")
-    CHAT_ID = os.getenv("CHAT_ID")
-    MESSAGE_THREAD_ID = os.getenv("MESSAGE_THREAD_ID") if os.getenv("MESSAGE_THREAD_ID") else None
+    # Загружаем получателей из переменной окружения
+    recipients_json = os.getenv("TELEGRAM_RECIPIENTS", "[]")
+    try:
+        TELEGRAM_RECIPIENTS = json.loads(recipients_json)
+        if not isinstance(TELEGRAM_RECIPIENTS, list):
+            raise ValueError("TELEGRAM_RECIPIENTS должен быть JSON-массивом.")
+    except json.JSONDecodeError:
+        raise ValueError("Ошибка декодирования JSON в TELEGRAM_RECIPIENTS.")
 
     # OpenAI API
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -67,7 +73,7 @@ def load_config(config_path: str):
     SCHEDULE_MINUTE = int(os.getenv("SCHEDULE_MINUTE", 0))
 
     # Лимит парсинга Telegram
-    TELEGRAM_PARSE_LIMIT = int(os.getenv("TELEGRAM_PARSE_LIMIT", 30)) # По умолчанию 30
+    TELEGRAM_PARSE_LIMIT = int(os.getenv("TELEGRAM_PARSE_LIMIT", 30))  # По умолчанию 30
 
     # Список официальных каналов (через запятую), например: "ozon,ozonnews,wildberries_official"
     OFFICIAL_CHANNELS = [c.strip() for c in os.getenv("OFFICIAL_CHANNELS", "").split(',') if c.strip()]
@@ -79,7 +85,6 @@ def load_config(config_path: str):
     ENABLE_SECTION_SPLIT = os.getenv("ENABLE_SECTION_SPLIT", "false").strip().lower() in ("1", "true", "yes")
     OFFICIAL_SECTION_TITLE = os.getenv("OFFICIAL_SECTION_TITLE", "Официальные источники").strip()
     OTHER_SECTION_TITLE = os.getenv("OTHER_SECTION_TITLE", "Другие источники").strip()
-    
 
     # Telegraph
     TELEGRAPH_ACCESS_TOKEN = os.getenv("TELEGRAPH_ACCESS_TOKEN")
@@ -90,11 +95,10 @@ def load_config(config_path: str):
     DIGEST_NAME = os.getenv("DIGEST_NAME", "AI")
 
     # Проверка наличия обязательных переменных
-    required_vars = ["API_ID", "API_HASH", "BOT_TOKEN", "CHAT_ID", "OPENAI_API_KEY", "TELEGRAM_CHANNELS", "ARTICLE_PROMPT", "SUMMARY_PROMPT", "DB_NAME", "TELEGRAM_PARSE_LIMIT"]
+    required_vars = ["API_ID", "API_HASH", "BOT_TOKEN", "TELEGRAM_RECIPIENTS", "OPENAI_API_KEY", "TELEGRAM_CHANNELS", "ARTICLE_PROMPT", "SUMMARY_PROMPT", "DB_NAME", "TELEGRAM_PARSE_LIMIT"]
     missing_vars = [var for var in required_vars if not globals().get(var)]
 
     if missing_vars:
         raise ValueError(f"В файле {config_path} отсутствуют переменные: {', '.join(missing_vars)}")
 
     print(f"Конфигурация успешно загружена из {config_path}")
-
