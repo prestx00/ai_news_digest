@@ -25,8 +25,16 @@ async def main():
         # Загружаем конфигурацию
         config.load_config(args.config)
         print(f"Конфигурация загружена из {args.config}")
-        print(f"CHAT_ID: {config.CHAT_ID}")
-        print(f"MESSAGE_THREAD_ID: {config.MESSAGE_THREAD_ID}")
+        
+        # Выводим информацию о получателях
+        if config.TELEGRAM_RECIPIENTS:
+            print(f"Настроено {len(config.TELEGRAM_RECIPIENTS)} получателей:")
+            for i, recipient in enumerate(config.TELEGRAM_RECIPIENTS, 1):
+                chat_id = recipient.get('chat_id')
+                thread_id = recipient.get('message_thread_id', 'N/A')
+                print(f"  {i}. Чат ID: {chat_id}, Топик ID: {thread_id}")
+        else:
+            print("В конфигурации не найдены получатели (TELEGRAM_RECIPIENTS).")
         
         # Отправляем тестовое уведомление
         print("\nОтправляем тестовое уведомление...")
