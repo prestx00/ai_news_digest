@@ -53,7 +53,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
     if prompt_template == config.SUMMARY_PROMPT:
         request_params = {
             **base_params,
-            "max_output_tokens": 16000,
+            "max_output_tokens": 15000,
             "reasoning": {"effort": "low"},
             # ВАЖНО: НЕ передаем temperature/top_p/penalties для gpt-5
         }
@@ -61,7 +61,7 @@ async def generate_article_and_summary(posts: list, prompt_template: str = None)
     else:
         request_params = {
             **base_params,
-            "max_output_tokens": 17000,
+            "max_output_tokens": 16000,
             "reasoning": {"effort": "medium"},
         }
         fallback_temperature = 0.55
